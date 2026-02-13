@@ -1,0 +1,8 @@
+services:
+  bot:
+    build: .
+    image: botifler:latest
+    container_name: botifler_container
+    env_file:
+      - .env
+    shm_size: '2gb' # Firefox often needs more shm
