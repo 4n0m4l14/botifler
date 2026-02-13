@@ -53,7 +53,7 @@ def austins(driver):
         wait.until(EC.element_to_be_clickable((By.ID, "start_btn"))).click()
         
         # Determine number of iterations randomly between 14 and 21
-        iterations = randint(14, 21)
+        iterations = randint(16, 24)
         print(f"Se realizarán {iterations} iteraciones en Austins.")
 
         for i in range(iterations):

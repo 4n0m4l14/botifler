@@ -1,0 +1,9 @@
+[Unit]
+Description=Run Botifler Daily
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+
+[Install]
+WantedBy=timers.target

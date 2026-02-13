@@ -1,0 +1,17 @@
+[Unit]
+Description=Botifler Daily Run
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/anomalia/Codigos-Python/agustin-automaton
+# Build ensure the image is up to date (optional, but good for dev)
+ExecStartPre=/usr/bin/docker compose build
+# Run the bot
+ExecStart=/usr/bin/docker compose up --abort-on-container-exit
+# Optional: Clean up
+# ExecStopPost=/usr/bin/docker compose down
+
+[Install]
+WantedBy=multi-user.target
