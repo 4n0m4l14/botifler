@@ -60,21 +60,24 @@ if grep -q "BOT_HEADLESS=false" .env 2>/dev/null; then
 fi
 
 # 5. Preparar variables de entorno y comando final
-ENV_VARS="UID_ENV=$USER_ID GID_ENV=$GROUP_ID DISPLAY=$DISPLAY WAYLAND_DISPLAY=$WAYLAND_DISPLAY XAUTHORITY=$XAUTHORITY"
+# Definimos las variables individuales
+V_UID="UID_ENV=$USER_ID"
+V_GID="GID_ENV=$GROUP_ID"
+V_DISPLAY="DISPLAY=$DISPLAY"
+V_WAYLAND="WAYLAND_DISPLAY=$WAYLAND_DISPLAY"
+V_XAUTH="XAUTHORITY=$XAUTHORITY"
 
 # Chequeamos si necesitamos sudo
-DOCKER_CMD=("${BASE_CMD[@]}")
 if ! docker ps >/dev/null 2>&1; then
     echo "[*] Docker necesita sudo. Preparando comando..."
-    # Con sudo, pasamos las variables explícitamente y luego el comando
-    # Nota: sudo no acepta arrays directamente fácilmente, construimos string para eval o usamos env
-    # Mejor enfoque: sudo env VAR=VAL comando
-    DOCKER_CMD=(sudo env "$ENV_VARS" "${BASE_CMD[@]}")
+    # sudo acepta asignaciones de variables antes del comando: sudo VAR=VAL cmd
+    FINAL_CMD=(sudo "$V_UID" "$V_GID" "$V_DISPLAY" "$V_WAYLAND" "$V_XAUTH" "${BASE_CMD[@]}" "${COMPOSE_FILES[@]}" up --build)
 else
-    # Sin sudo, exportamos variables para este comando
-    DOCKER_CMD=(env "$ENV_VARS" "${BASE_CMD[@]}")
+    # Sin sudo, usamos env para pasar las variables limpiamente
+    # env VAR=VAL cmd
+    FINAL_CMD=(env "$V_UID" "$V_GID" "$V_DISPLAY" "$V_WAYLAND" "$V_XAUTH" "${BASE_CMD[@]}" "${COMPOSE_FILES[@]}" up --build)
 fi
 
 # 6. Arrancar
-echo "[*] Ejecutando: ${DOCKER_CMD[*]} ${COMPOSE_FILES[*]} up --build"
-"${DOCKER_CMD[@]}" "${COMPOSE_FILES[@]}" up --build
+echo "[*] Ejecutando: ${FINAL_CMD[*]}"
+"${FINAL_CMD[@]}"
