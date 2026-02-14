@@ -41,35 +41,40 @@ fi
 # 3. Preparar el comando de Docker (pasando variables si se usa sudo)
 # 3. Detectar comando Compose (V2 vs V1)
 if docker compose version >/dev/null 2>&1; then
-    BASE_CMD="docker compose"
+    BASE_CMD=(docker compose)
 elif command -v docker-compose >/dev/null 2>&1; then
-    BASE_CMD="docker-compose"
+    BASE_CMD=(docker-compose)
 else
     echo "ERROR: No se encontró 'docker compose' ni 'docker-compose'."
     exit 1
 fi
 
-# 4. Preparar el comando de Docker (pasando variables y sudo si hace falta)
-DOCKER_CMD="$BASE_CMD"
+# 4. Seleccionar archivos Compose
+# Por defecto usamos el base (headless)
+COMPOSE_FILES=("-f" "docker-compose.yml")
 
-# Chequeamos si necesitamos sudo para docker
-NEED_SUDO=0
-if ! docker ps >/dev/null 2>&1; then
-    NEED_SUDO=1
+# Si NO es headless, agregamos el override de GUI
+if grep -q "BOT_HEADLESS=false" .env 2>/dev/null; then
+    echo "[*] Modo GUI Activado: Incluyendo configuración gráfica..."
+    COMPOSE_FILES+=("-f" "docker-compose.gui.yml")
 fi
 
-# Construimos el prefijo de variables
+# 5. Preparar variables de entorno y comando final
 ENV_VARS="UID_ENV=$USER_ID GID_ENV=$GROUP_ID DISPLAY=$DISPLAY WAYLAND_DISPLAY=$WAYLAND_DISPLAY XAUTHORITY=$XAUTHORITY"
 
-if [ $NEED_SUDO -eq 1 ]; then
-    echo "[*] Docker necesita sudo. Pasando variables de entorno..."
-    DOCKER_CMD="sudo $ENV_VARS $BASE_CMD"
+# Chequeamos si necesitamos sudo
+DOCKER_CMD=("${BASE_CMD[@]}")
+if ! docker ps >/dev/null 2>&1; then
+    echo "[*] Docker necesita sudo. Preparando comando..."
+    # Con sudo, pasamos las variables explícitamente y luego el comando
+    # Nota: sudo no acepta arrays directamente fácilmente, construimos string para eval o usamos env
+    # Mejor enfoque: sudo env VAR=VAL comando
+    DOCKER_CMD=(sudo env "$ENV_VARS" "${BASE_CMD[@]}")
 else
-    DOCKER_CMD="$ENV_VARS $BASE_CMD"
+    # Sin sudo, exportamos variables para este comando
+    DOCKER_CMD=(env "$ENV_VARS" "${BASE_CMD[@]}")
 fi
 
-# 5. Arrancar
-echo "[*] Usando comando: $BASE_CMD"
-echo "[*] Reconstruyendo y arrancando contenedor..."
-# Nota: eval es necesario aquí para que las variables de entorno se interpreten correctamente antes del comando
-eval $DOCKER_CMD up --build
+# 6. Arrancar
+echo "[*] Ejecutando: ${DOCKER_CMD[*]} ${COMPOSE_FILES[*]} up --build"
+"${DOCKER_CMD[@]}" "${COMPOSE_FILES[@]}" up --build

@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  bot:
+    environment:
+      DISPLAY: ${DISPLAY}
+      WAYLAND_DISPLAY: ${WAYLAND_DISPLAY}
+      MOZ_ENABLE_WAYLAND: "1"
+      XAUTHORITY: /tmp/.X11-unix/Xauthority
+      XDG_RUNTIME_DIR: /run/user/${UID_ENV:-1000}
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ${XAUTHORITY}:/tmp/.X11-unix/Xauthority:ro
+      - /run/user/${UID_ENV:-1000}/wayland-0:/run/user/${UID_ENV:-1000}/wayland-0

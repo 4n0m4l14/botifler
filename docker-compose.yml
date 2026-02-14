@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   bot:
     build: .
@@ -5,17 +7,8 @@ services:
     container_name: botifler_container
     env_file:
       - .env
-    user: "${UID_ENV}:${GID_ENV}"
+    user: "${UID_ENV:-1000}:${GID_ENV:-1000}"
     environment:
       PYTHONUNBUFFERED: "1"
-      DISPLAY: ${DISPLAY}
-      WAYLAND_DISPLAY: ${WAYLAND_DISPLAY}
-      MOZ_ENABLE_WAYLAND: "1"
-      XAUTHORITY: /tmp/.X11-unix/Xauthority
-      XDG_RUNTIME_DIR: /run/user/${UID_ENV:-1000}
       HOME: /home/botuser
-    volumes:
-      - /tmp/.X11-unix:/tmp/.X11-unix
-      - ${XAUTHORITY}:/tmp/.X11-unix/Xauthority
-      - /run/user/${UID_ENV:-1000}/wayland-0:/run/user/${UID_ENV:-1000}/wayland-0
     shm_size: '2gb'
