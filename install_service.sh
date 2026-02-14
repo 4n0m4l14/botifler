@@ -15,9 +15,30 @@ fi
 
 echo "[*] Installing Botifler Service..."
 
-# 1. Update WorkingDirectory in service file to current location
-echo "[*] Updating service file with current directory: $CURRENT_DIR"
+# Detect correct docker compose command path
+if docker compose version >/dev/null 2>&1; then
+    # Docker V2 (plugin)
+    DOCKER_BIN=$(which docker)
+    COMPOSE_CMD="$DOCKER_BIN compose"
+elif command -v docker-compose >/dev/null 2>&1; then
+    # Docker V1 (standalone)
+    COMPOSE_CMD=$(which docker-compose)
+else
+    echo "ERROR: Could not find 'docker compose' or 'docker-compose'."
+    exit 1
+fi
+
+echo "[*] Detected Compose Command: $COMPOSE_CMD"
+
+# 1. Update Service File
+echo "[*] Updating service file configuration..."
 sed -i "s|WorkingDirectory=.*|WorkingDirectory=$CURRENT_DIR|" systemd/$SERVICE_NAME
+
+# Update ExecStartPre and ExecStart dynamically
+# We use a placeholder or overwrite lines 10 and 12 specifically if possible, or just replace the detection pattern
+# Since we don't know the exact lines in target sed easily without regex, we assume standard format
+sed -i "s|ExecStartPre=.*|ExecStartPre=$COMPOSE_CMD build|" systemd/$SERVICE_NAME
+sed -i "s|ExecStart=.*|ExecStart=$COMPOSE_CMD up --abort-on-container-exit|" systemd/$SERVICE_NAME
 
 # 2. Copy files
 echo "[*] Copying systemd unit files..."

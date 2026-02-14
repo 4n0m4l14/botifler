@@ -39,15 +39,37 @@ if grep -q "BOT_HEADLESS=false" .env 2>/dev/null; then
 fi
 
 # 3. Preparar el comando de Docker (pasando variables si se usa sudo)
-DOCKER_CMD="docker compose"
-if ! docker ps >/dev/null 2>&1; then
-    echo "[*] Docker necesita sudo. Pasando variables de entorno..."
-    DOCKER_CMD="sudo UID_ENV=$USER_ID GID_ENV=$GROUP_ID DISPLAY=$DISPLAY WAYLAND_DISPLAY=$WAYLAND_DISPLAY XAUTHORITY=$XAUTHORITY docker compose"
+# 3. Detectar comando Compose (V2 vs V1)
+if docker compose version >/dev/null 2>&1; then
+    BASE_CMD="docker compose"
+elif command -v docker-compose >/dev/null 2>&1; then
+    BASE_CMD="docker-compose"
 else
-    # Si no usa sudo, también pasamos las variables
-    DOCKER_CMD="UID_ENV=$USER_ID GID_ENV=$GROUP_ID DISPLAY=$DISPLAY WAYLAND_DISPLAY=$WAYLAND_DISPLAY XAUTHORITY=$XAUTHORITY docker compose"
+    echo "ERROR: No se encontró 'docker compose' ni 'docker-compose'."
+    exit 1
 fi
 
-# 4. Arrancar
+# 4. Preparar el comando de Docker (pasando variables y sudo si hace falta)
+DOCKER_CMD="$BASE_CMD"
+
+# Chequeamos si necesitamos sudo para docker
+NEED_SUDO=0
+if ! docker ps >/dev/null 2>&1; then
+    NEED_SUDO=1
+fi
+
+# Construimos el prefijo de variables
+ENV_VARS="UID_ENV=$USER_ID GID_ENV=$GROUP_ID DISPLAY=$DISPLAY WAYLAND_DISPLAY=$WAYLAND_DISPLAY XAUTHORITY=$XAUTHORITY"
+
+if [ $NEED_SUDO -eq 1 ]; then
+    echo "[*] Docker necesita sudo. Pasando variables de entorno..."
+    DOCKER_CMD="sudo $ENV_VARS $BASE_CMD"
+else
+    DOCKER_CMD="$ENV_VARS $BASE_CMD"
+fi
+
+# 5. Arrancar
+echo "[*] Usando comando: $BASE_CMD"
 echo "[*] Reconstruyendo y arrancando contenedor..."
-$DOCKER_CMD up --build
+# Nota: eval es necesario aquí para que las variables de entorno se interpreten correctamente antes del comando
+eval $DOCKER_CMD up --build
