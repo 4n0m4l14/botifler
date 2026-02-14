@@ -2,6 +2,12 @@
 
 # Script para arrancar el bot detectando el entorno (X11 vs Wayland)
 
+# Detectar si necesitamos sudo para docker
+SUDO_CMD=""
+if ! docker ps >/dev/null 2>&1; then
+    SUDO_CMD="sudo"
+fi
+
 # 1. Detectar Argumentos (Reset/Clean)
 if [[ "$1" == "--reset" || "$1" == "--clean" ]]; then
     echo "[!] MODO RESET ACTIVADO"
@@ -11,12 +17,14 @@ if [[ "$1" == "--reset" || "$1" == "--clean" ]]; then
     if command -v docker-compose >/dev/null 2>&1; then
         export DOCKER_BUILDKIT=0
         export COMPOSE_DOCKER_CLI_BUILD=0
-        docker-compose down --volumes --remove-orphans 2>/dev/null || true
+        # Usamos el prefijo sudo si es necesario
+        $SUDO_CMD docker-compose down --volumes --remove-orphans 2>/dev/null || true
     fi
     
     # Limpieza forzada de contenedores zombies
     echo "[-] Forzando eliminación de contenedores 'botifler'..."
-    docker ps -a | grep botifler | awk '{print $1}' | xargs -r sudo docker rm -f
+    # Importante: docker ps necesita sudo también si docker lo necesita
+    $SUDO_CMD docker ps -a | grep botifler | awk '{print $1}' | xargs -r $SUDO_CMD docker rm -f
     
     echo "[-] Limpieza completada. Continuando con arranque normal..."
     echo "---------------------------------------------------------"
