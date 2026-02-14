@@ -44,6 +44,9 @@ if docker compose version >/dev/null 2>&1; then
     BASE_CMD=(docker compose)
 elif command -v docker-compose >/dev/null 2>&1; then
     BASE_CMD=(docker-compose)
+    # FORZAR compatibilidad con versiones antiguas (evita error KeyError: 'ContainerConfig')
+    export DOCKER_BUILDKIT=0
+    export COMPOSE_DOCKER_CLI_BUILD=0
 else
     echo "ERROR: No se encontró 'docker compose' ni 'docker-compose'."
     exit 1
