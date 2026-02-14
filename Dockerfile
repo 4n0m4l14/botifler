@@ -27,9 +27,9 @@ RUN chmod 777 /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY botifler-0.2.py .
+COPY main.py .
 
 # Set HOME to the directory we created
 ENV HOME=/home/botuser
 
-CMD ["python", "botifler-0.2.py"]
+CMD ["python", "main.py"]

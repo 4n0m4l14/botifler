@@ -25,8 +25,21 @@ Botifler is an automated bot for completing daily tasks on CodeLearn. It is robu
     cd botifler
     ```
 
+## Development
+
+To run locally without Docker (requires Firefox and Geckodriver installed):
+```bash
+pip install -r requirements.txt
+python main.py
+```
+
 2.  **Configure Environment**:
-    Create a `.env` file (or edit exisiting):
+    Copy the example file and edit it:
+    ```bash
+    cp .env.example .env
+    nano .env
+    ```
+    Set your credentials:
     ```env
     BOT_USER=your_email@example.com
     BOT_PASSWORD=your_password
