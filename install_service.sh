@@ -23,6 +23,12 @@ if docker compose version >/dev/null 2>&1; then
 elif command -v docker-compose >/dev/null 2>&1; then
     # Docker V1 (standalone)
     COMPOSE_CMD=$(which docker-compose)
+    
+    # Inject environment variables for legacy compatibility into the service file
+    echo "[*] Legacy docker-compose detected. Patching service for BuildKit compatibility..."
+    # Insert after [Service]
+    sed -i '/\[Service\]/a Environment="COMPOSE_DOCKER_CLI_BUILD=0"' systemd/$SERVICE_NAME
+    sed -i '/\[Service\]/a Environment="DOCKER_BUILDKIT=0"' systemd/$SERVICE_NAME
 else
     echo "ERROR: Could not find 'docker compose' or 'docker-compose'."
     exit 1
