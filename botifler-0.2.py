@@ -14,15 +14,48 @@ from selenium.webdriver.support import expected_conditions as EC
 
 from webdriver_manager.firefox import GeckoDriverManager
 
+import platform
+
+def is_docker():
+    """Detecta si el script se está ejecutando dentro de un contenedor Docker."""
+    return os.path.exists('/.dockerenv') or os.path.exists('/run/.containerenv')
+
 def setupDriver():
     options = Options()
-    options.add_argument("--headless") # Modo oculto activado para Docker
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
+    system_os = platform.system()
+    in_docker = is_docker()
     
-    service = FirefoxService(GeckoDriverManager().install())
-    driver = webdriver.Firefox(service=service, options=options)
-    return driver
+    # Read headless mode from env, default to True (headless)
+    headless_str = os.environ.get('BOT_HEADLESS', 'true').lower()
+    is_headless = headless_str == 'true'
+    
+    print(f"Sistema detectado: {system_os} ({'Docker' if in_docker else 'Nativo'})")
+    
+    if is_headless:
+        print("Modo headless ACTIVADO.")
+        options.add_argument("--headless")
+    else:
+        # Si no es headless, verificamos si tenemos DISPLAY en Linux
+        if system_os == "Linux" and not os.environ.get("DISPLAY") and not os.environ.get("WAYLAND_DISPLAY"):
+             print("ADVERTENCIA: No se detectó DISPLAY/WAYLAND_DISPLAY. Forzando modo headless para evitar error.")
+             options.add_argument("--headless")
+        else:
+             print("Modo headless DESACTIVADO. Se intentará abrir ventana.")
+
+    # Argumentos para estabilidad
+    if in_docker or system_os == "Linux":
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+    
+    # En Docker usamos firefox-esr habitualmente, en nativo el que esté instalado
+    try:
+        service = FirefoxService(GeckoDriverManager().install())
+        driver = webdriver.Firefox(service=service, options=options)
+        return driver
+    except Exception as e:
+        print(f"Error al iniciar Firefox: {e}")
+        print("Asegúrate de tener Firefox instalado en tu sistema.")
+        raise
 
 def login(driver):
     login_url = 'https://fun.codelearn.es'
@@ -151,26 +184,41 @@ def get_cycles():
 # --- EJECUCIÓN ---
 if __name__ == "__main__":
     n_ciclos = get_cycles()
+    print(f"--- INICIANDO BOTIFLER ---")
     print(f"Configurado para ejecutar {n_ciclos} ciclos.")
     
     driver = None
     try:
+        print("Instalando/Configurando driver de Firefox...")
         driver = setupDriver()
+        print("Navegador iniciado correctamente.")
+        
         login(driver)
+        print("Sesión iniciada con éxito.")
 
         for i in range(n_ciclos):
-            print(f"Iniciando ciclo {i+1} de {n_ciclos}")
+            print(f"\n>>> INICIANDO CICLO {i+1} de {n_ciclos} <<<")
             austins(driver)
-            sleep(90)
+            
+            wait_time = 90
+            print(f"Esperando {wait_time} segundos antes de Typing Race...")
+            sleep(wait_time)
+            
             typingRace(driver)
-            print(f"Ciclo {i+1} completado.")
+            print(f"<<< CICLO {i+1} COMPLETADO >>>")
+            
             if i < n_ciclos - 1:
-                sleep(randint(5, 10))
+                intervalo = randint(5, 10)
+                print(f"Esperando intervalo aleatorio de {intervalo}s entre ciclos...")
+                sleep(intervalo)
         
-        print("Proceso finalizado con éxito.")
+        print("\n--- PROCESO FINALIZADO CON ÉXITO ---")
     except Exception as e:
-        print(f"Error fatal: {e}")
+        print(f"\n!!! ERROR FATAL: {e} !!!")
+        import traceback
+        traceback.print_exc()
     finally:
         if driver:
             print("Cerrando navegador...")
             driver.quit()
+            print("Navegador cerrado.")
