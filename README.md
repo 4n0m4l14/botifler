@@ -84,11 +84,17 @@ sudo docker compose up --build
 
 To run the bot automatically every day (Headless mode recommended):
 
-1.  Edit `.env` and set `BOT_HEADLESS=true`.
-2.  Install systemd service:
+1.  **Configure for Headless**:
+    Edit `.env` and set `BOT_HEADLESS=true` (unless you have a display server always running and accessible).
+
+2.  **Install Service**:
+    Run the provided script to schedule the bot:
     ```bash
-    sudo cp systemd/botifler.service /etc/systemd/system/
-    sudo cp systemd/botifler.timer /etc/systemd/system/
-    sudo systemctl daemon-reload
-    sudo systemctl enable --now botifler.timer
+    sudo ./install_service.sh
+    ```
+
+3.  **Uninstall/Disable**:
+    If you want to stop the daily execution:
+    ```bash
+    sudo ./uninstall_service.sh
     ```
