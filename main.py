@@ -62,7 +62,17 @@ class CodeLearnBot:
             options.add_argument("--disable-dev-shm-usage")
         
         try:
-            service = FirefoxService(GeckoDriverManager().install())
+            # Intentar usar el geckodriver instalado en el sistema (por Dockerfile)
+            from shutil import which
+            system_driver = which('geckodriver')
+            
+            if system_driver:
+                print(f"Usando geckodriver del sistema: {system_driver}")
+                service = FirefoxService(executable_path=system_driver)
+            else:
+                print("Geckodriver no en PATH, descargando con webdriver-manager...")
+                service = FirefoxService(GeckoDriverManager().install())
+
             self.driver = webdriver.Firefox(service=service, options=options)
             print("Navegador iniciado correctamente.")
         except Exception as e:
