@@ -2,7 +2,28 @@
 
 # Script para arrancar el bot detectando el entorno (X11 vs Wayland)
 
-# 1. Detectar Servidor Gráfico y permisos
+# 1. Detectar Argumentos (Reset/Clean)
+if [[ "$1" == "--reset" || "$1" == "--clean" ]]; then
+    echo "[!] MODO RESET ACTIVADO"
+    echo "[-] Deteniendo y limpiando contenedores antiguos..."
+    
+    # Intentar limpiar con docker-compose si existe
+    if command -v docker-compose >/dev/null 2>&1; then
+        export DOCKER_BUILDKIT=0
+        export COMPOSE_DOCKER_CLI_BUILD=0
+        docker-compose down --volumes --remove-orphans 2>/dev/null || true
+    fi
+    
+    # Limpieza forzada de contenedores zombies
+    echo "[-] Forzando eliminación de contenedores 'botifler'..."
+    docker ps -a | grep botifler | awk '{print $1}' | xargs -r sudo docker rm -f
+    
+    echo "[-] Limpieza completada. Continuando con arranque normal..."
+    echo "---------------------------------------------------------"
+    sleep 2
+fi
+
+# 2. Detectar Servidor Gráfico y permisos
 if [ "$XDG_SESSION_TYPE" == "wayland" ]; then
     echo "[!] Detectado Wayland. Configurando para compatibilidad..."
     # Wayland suele necesitar permisos específicos o XWayland
