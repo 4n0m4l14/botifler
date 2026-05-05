@@ -77,8 +77,6 @@ sudo docker compose up --build
 ### 3. "Authorization required, but no authorization protocol specified"
 *   **Solution**: Run `xhost +si:localuser:$(whoami)` and try again. The `./run.sh` script attempts to do this automatically.
 
-### 4. Git Push Issues
-*   Ensure you have created the repository on GitHub and authenticated using `gh auth login` or set up SSH keys.
 
 ## Daily Schedule (Systemd)
 
